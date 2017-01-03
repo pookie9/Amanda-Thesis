@@ -1,5 +1,3 @@
-#
-#
 function pred=predict(c1,c2,k1,k2,t)
   pred=c1*exp(-t*k1)+c2*exp(-t*k2);
 endfunction
@@ -30,7 +28,7 @@ function [c1,c2,k1,k2]=gradient(c1,c2,k1,k2,t,y,alpha)
 endfunction
 
 function [c1,c2,k1,k2]=sgd(data,num_restarts)
-  best_sse=float('inf');
+  best_sse=Inf;
   best_params=[0,0,0,0];
   for i=0:num_restarts
     c1=rand;
@@ -38,11 +36,16 @@ function [c1,c2,k1,k2]=sgd(data,num_restarts)
     k1=rand;
     k2=rand*10.0;
     alpha=.1;
-    for j=0:1000000
+    prev_sse=Inf;
+    for j=0:100000
       rand_index=ceil(rand*size(data,1));
       t=data(rand_index,2);
       y=data(rand_index,1);
-      c1,c2,k1,k2=gradient(c1,c2,k1,k2,t,y,alpha);
+      [c1,c2,k1,k2]=gradient(c1,c2,k1,k2,t,y,alpha);
+      cur_sse=sse(c1,c2,k1,k2,data);
+      if cur_sse>prev_sse
+        break;
+      endif
       alpha*=.9999;
     endfor
     cur_sse=sse(c1,c2,k1,k2,data);
@@ -51,14 +54,20 @@ function [c1,c2,k1,k2]=sgd(data,num_restarts)
       best_params=[c1,c2,k1,k2];
     endif
   endfor
-  [c1,c2,k1,k2]=best_params;
+  best_params
+  c1=best_params(1);
+  c2=best_params(2);
+  k1=best_params(3);
+  k2=best_params(4);
 endfunction
 
-data_file=str2num(argv(){1});
-num_restarts=100000;
+data_file=argv(){1};
+num_restarts=1000000;
 data=csvread(data_file);
 [c1,c2,k1,k2]=sgd(data,num_restarts);
+best_sse=sse(c1,c2,k1,k2,data);
 c1
 c2
 k1
 k2
+best_sse
