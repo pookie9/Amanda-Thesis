@@ -18,8 +18,6 @@ def gradient_step(c1,c2,k1,k2,t,y,alpha):
     c2/=s
     k1-=k1_grad*alpha
     k2-=k2_grad*alpha
-    if c1+c2+.000000001<1.0:
-        print "BAD HERE: ",c1,c2,s
     return (c1,c2,k1,k2)
 
 def pred(c1,c2,k1,k2,t):

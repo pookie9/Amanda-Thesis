@@ -1,4 +1,0 @@
-pred=function predict(c1,c2,k1,k2,t)
-  pred=c1*exp(-t*k1)+c2*exp(-t*k2)
-endfunction
-
