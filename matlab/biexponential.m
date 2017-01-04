@@ -1,33 +1,31 @@
 %data_file=argv(1)
-LAMBDA=0.0
 data_file='../data/synthetic.csv';
 num_restarts=100000;
 data=csvread(data_file);
-[c1,c2,k1,k2]=sgd(data,num_restarts,LAMBDA);
+[c1,c2,k1,k2]=sgd(data,num_restarts);
 c1
 c2
 k1
 k2
-sse_val=sse(c1,c2,k1,k2,data,LAMBDA)
+sse_val=sse(c1,c2,k1,k2,data)
 
 
-function pred=predict(c1,c2,k1,k2,t,LAMBDA)
-    pred=c1*(LAMBDA*exp(-k1*t)-k1*exp(-LAMBDA*t))/(LAMBDA-k1)+c2*(LAMBDA*exp(-k2*t)-k2*exp(-LAMBDA*t))/(LAMBDA-k2);
+function pred=predict(c1,c2,k1,k2,t)
+  pred=c1*exp(-t*k1)+c2*exp(-t*k2);
 end
 
-function sse_val=sse(c1,c2,k1,k2,data,LAMBDA)
+function sse_val=sse(c1,c2,k1,k2,data)
   sse_val=0;
   for i=1:size(data,1)
-    sse_val=sse_val+(predict(c1,c2,k1,k2,data(i,1),LAMBDA)-data(i,2))^2;
+    sse_val=sse_val+(predict(c1,c2,k1,k2,data(i,1))-data(i,2))^2;
   end
 end
 
-function [c1,c2,k1,k2]=gradient(c1,c2,k1,k2,t,y,alpha,LAMBDA)
-  p=predict(c1,c2,k1,k2,t,LAMBDA);
-  c1_grad=(p-y)*(LAMBDA*exp(-k1*t)-k1*exp(-LAMBDA*t))/(LAMBDA-k1);
-  c2_grad=(p-y)*(LAMBDA*exp(-k2*t)-k2*exp(-LAMBDA*t))/(LAMBDA-k2);
-  k1_grad=(y-p)*c1*((LAMBDA*t*exp(-k1*t)+exp(-LAMBDA*t))/(LAMBDA-k1)+(k1*exp(-LAMBDA*t)-LAMBDA*exp(-k1*t))/(LAMBDA-k1)^2.0);
-  k2_grad=(y-p)*c2*((LAMBDA*t*exp(-k2*t)+exp(-LAMBDA*t))/(LAMBDA-k2)+(k2*exp(-LAMBDA*t)-LAMBDA*exp(-k2*t))/(LAMBDA-k2)^2.0);
+function [c1,c2,k1,k2]=gradient(c1,c2,k1,k2,t,y,alpha)
+  c1_grad=-2*y*exp(-t*k1)-2*c1*exp(-2*t*k1)-2*c2*exp(-t*(k1+k2));
+  c2_grad=-2*y*exp(-t*k2)-2*c2*exp(-2*t*k2)-2*c1*exp(-t*(k1+k2));
+  k1_grad=2*y*c1*t*exp(-t*k1)+2*t*c1*exp(-2*t*k1)+2*t*c1*c2*exp(-t*(k1+k2));
+  k2_grad=2*y*c2*t*exp(-t*k2)+2*t*c2*exp(-2*t*k2)+2*t*c1*c2*exp(-t*(k1+k2));
   c1=c1-c1_grad*alpha;
   c2=c2-c2_grad*alpha;
   c1=max(c1,0);
@@ -41,7 +39,7 @@ function [c1,c2,k1,k2]=gradient(c1,c2,k1,k2,t,y,alpha,LAMBDA)
   k2=max(k2,0.0);
 end
 
-function [c1,c2,k1,k2]=sgd(data,num_restarts,LAMBDA)
+function [c1,c2,k1,k2]=sgd(data,num_restarts)
   best_sse=Inf;
   best_params=[0,0,0,0];
   prev_sse=Inf;
@@ -55,9 +53,9 @@ function [c1,c2,k1,k2]=sgd(data,num_restarts,LAMBDA)
       rand_index=ceil(rand*size(data,1));
       t=data(rand_index,2);
       y=data(rand_index,1);
-      [c1,c2,k1,k2]=gradient(c1,c2,k1,k2,t,y,alpha,LAMBDA);
+      [c1,c2,k1,k2]=gradient(c1,c2,k1,k2,t,y,alpha);
       alpha=alpha*.9999;
-      cur_sse=sse(c1,c2,k1,k2,data,LAMBDA);
+      cur_sse=sse(c1,c2,k1,k2,data);
       if cur_sse>prev_sse
 	break
       end
